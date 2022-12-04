@@ -1,0 +1,1479 @@
+{- Imported Modules
+
+Inst: Responsible for drawing the Instructions page of the app
+  
+Cheatsheet: Responsible for drawing the Cheatsheet page of the app
+
+BLUE: The blue background option of the homepage
+
+YELLOW: The orange background option of the homepage
+
+RED: The pink background option of the homepage
+
+GREY: The grey background option of the homepage
+
+GREEN: The green background option of the homepage
+
+PINK: The purple background option of the homepage
+
+-}
+
+
+import Round
+
+myShapes model =
+    case model.state of
+        Start  ->
+            [ 
+              -- responsible for drawing the background of the homepage 
+              group (case model.backGroundColor of 
+                      0 -> Sunw53.BLUE.myShapes model
+                      3 -> Sunw53.YELLOW.myShapes model
+                      1 -> Sunw53.RED.myShapes model
+                      5 -> Sunw53.GREY.myShapes model
+                      2 -> Sunw53.GREEN.myShapes model
+                      4 -> Sunw53.PINK.myShapes model
+                      otherwise -> Sunw53.BLUE.myShapes model )
+               
+               -- Responsible for drawing the dropdown menu of the homepage
+               , gear |> scale 2 |> move (80, -55) |> notifyTap StartDrop
+               , if model.startDrop
+                   then group [
+                     rect 30 25 |> filled white 
+                     , rect 30 25 |> outlined (solid 1) (rgb 135 206 250) 
+                     , circle 2.5 |> filled blue |> move (-10, 7.5) |> notifyTap (ChangeBackground 0)
+                     , circle 2.5 |> filled pink |> move (0, 7.5) |> notifyTap (ChangeBackground 1)
+                     , circle 2.5 |> filled green |> move (10, 7.5) |> notifyTap (ChangeBackground 2)
+                     , circle 2.5 |> filled yellow |> move (-10, 0) |> notifyTap (ChangeBackground 3)
+                     , circle 2.5 |> filled purple |> move (0, 0) |> notifyTap (ChangeBackground 4)
+                     , circle 2.5 |> filled gray |> move (10, 0) |> notifyTap (ChangeBackground 5)
+                     ] |> move (80, -34)
+                   else rect 0.0001 0.0001 |> filled white
+               
+               --Responsible for drawing the navigation buttons
+               , group
+                  [
+                       roundedRect 40 20 5
+                            |> filled white
+                  ,    text "Instructions"
+                            |> centered
+                            |> size 8
+                            |> filled black
+                            |> move(0, -3)
+                  ]
+                     |> move (-50, -10)
+                     |> notifyTap ToInstructions
+                  
+                  , group
+                  [
+                       roundedRect 40 20 5
+                            |> filled white
+                  ,    text "Cheat Sheet"
+                            |> centered
+                            |> size 6
+                            |> filled black
+                            |> move(0, 2)
+                  ,    text "and"
+                            |> centered
+                            |> size 5
+                            |> filled black
+                            |> move(0, -2)
+                  ,    text "Key Def"
+                            |> centered
+                            |> size 6
+                            |> filled black
+                            |> move(0, -7)
+                  ]
+                     |> move (70, -10)
+                     |> notifyTap ToCheatSheet
+                     
+                  , group
+                  [
+                       roundedRect 40 20 5
+                            |> filled white
+                  ,    text "To grid"
+                            |> centered
+                            |> size 8
+                            |> filled black
+                            |> move(0, -3)
+                  ]
+                     |> move (10, -10)
+                     |> notifyTap ToGrid
+               
+            ]
+
+        
+        Instructions ->
+            -- Responsible for drawing the instructions page
+            [ Huanh41.Inst.myShapes model.instructionsModel
+                |> List.map
+                      (GraphicSVG.map InstructionsMsg)
+                |> group
+            ] ++
+            
+            -- Responsible for drawing the top navigation bar buttons
+            [
+              rect 12 8 |> filled white |> makeTransparent 0 |> move (-49, 55) |> notifyTap ToGrid
+              , rect 30 8 |> filled white |> makeTransparent 0 |> move (-25, 55) |> notifyTap ToCheatSheet
+            ]
+            
+         
+        CheatSheet  ->
+            -- Responsible for drawing the cheatsheet 
+            [ Sunw53.Cheatsheet.myShapes model.cheatsheetModel
+                |> List.map
+                      (GraphicSVG.map CheatsheetMsg)
+                |> group
+            ] ++
+            
+            -- Responsible for drawing the top navigation bar
+            [
+              group [
+                rect 191 15
+                    |> filled white
+                , rect 191 15
+                    |> outlined (solid 1) (rgb 135 206 250)
+                , text "Instructions" |> centered |> fixedwidth |> size 5 |> filled black |> move (-75, -2)
+                , text "Grid" |> centered |> fixedwidth |> size 5 |> filled black |> move (-49, -2)
+                , text "Cheat Sheet" |> centered |> fixedwidth |> size 5 |> filled black |> move (-25, -2)
+                , rect 30 14 |> filled (rgb 135 206 250) |> makeTransparent 0.75 |> move (-25, 0)
+                , rect 12 14 |> filled white |> makeTransparent 0 |> move (-49, 0) |> notifyTap ToGrid
+                , rect 35 14 |> filled white |> makeTransparent 0 |> move (-75, 0) |> notifyTap ToInstructions
+              ] |> move (0,50)
+            ]
+        Grid  ->
+            [ 
+             group [
+             
+             -- Responsible for drawing grid
+             
+             if model.hideGrid 
+               then
+                rect 0.0001 0.0001 |> filled white
+               else
+                group [
+
+                 List.map (\idx -> rect 1000 0.25 |> filled grey 
+                                                 |> rotate (atan2 (index model.basisX 1) (index model.basisX 0))
+                                                 |> move ((index (orthoComp2D model.basisY model.basisX) 0)* toFloat idx, ( index (orthoComp2D model.basisY model.basisX) 1)* toFloat idx))
+                           (List.range (if (vLen2D (orthoComp2D model.basisY model.basisX)) > 1 then (ceiling (-230.755/ (vLen2D (orthoComp2D model.basisY model.basisX)))) else -100) 
+                             (if (vLen2D (orthoComp2D model.basisY model.basisX)) > 1 then (ceiling (230.755 / (vLen2D (orthoComp2D model.basisY model.basisX)))) else 100))
+                      |> group
+
+                , List.map (\idx -> rect 1000 0.25 |> filled grey 
+                                                 |> rotate (atan2 (index model.basisY 1) (index model.basisY 0))
+                                                 |> move ((index (orthoComp2D model.basisX model.basisY) 0)* toFloat idx, ( index (orthoComp2D model.basisX model.basisY) 1)* toFloat idx))
+                           (List.range (if (vLen2D (orthoComp2D model.basisX model.basisY)) > 1 then (ceiling (-230.755 / (vLen2D (orthoComp2D model.basisX model.basisY)))) else -100) 
+                             (if (vLen2D (orthoComp2D model.basisX model.basisY)) > 1 then (ceiling (230.755 / (vLen2D (orthoComp2D model.basisX model.basisY)))) else 100))
+                      |> group
+                ] 
+            -- responsible for drawing axis
+            
+            , if model.hideAxis
+                then rect 0.0001 0.0001 |> filled white
+               else
+             group [
+                 group [ 
+                    rect 1000 0.50 
+                        |> filled lightCharcoal   
+                    , if (model.hShear || model.vShear || model.rotateVector || model.xReflection || model.yReflection) 
+                          then text "y" |> centered |> fixedwidth |> size 5 |> filled black |> rotate (degrees -90)|> move (-62, 2)
+                          else rect 0.0001 0.00001 |> filled white
+                ]|> rotate (atan2 (index model.basisY 1) (index model.basisY 0))
+                , group [
+                    rect 1000 0.50 
+                      |> filled lightCharcoal
+                    , if (model.hShear || model.vShear || model.rotateVector || model.xReflection || model.yReflection) 
+                          then text "x" |> centered |> fixedwidth |> size 5 |> filled black |> move (93, 2)
+                          else rect 0.0001 0.00001 |> filled white
+                 ] |> rotate (atan2 (index model.basisX 1) (index model.basisX 0))
+                  , if not (model.hShear || model.vShear || model.rotateVector || model.xReflection || model.yReflection) 
+                          then group [ text "x" |> centered |> fixedwidth |> size 5 |> filled black |> move (93, 2)
+                                       , text "y" |> centered |> fixedwidth |> size 5 |> filled black |> move (2, -62)
+                                     ]
+                          else rect 0.0001 0.00001 |> filled white
+              ]
+            
+            ]
+             
+             
+            
+            -- Responsible for drawing the top bar navigation
+            , group 
+              [rect 190 10 
+                  |> filled white
+              , rect 190 10 
+                  |> outlined (solid 1) (rgb 135 206 250)
+              , text "Instructions" |> centered |> fixedwidth |> size 5 |> filled black |> move (-75, -2)
+              , text "Grid" |> centered |> fixedwidth |> size 5 |> filled black |> move (-49, -2)
+              , text "Cheat Sheet" |> centered |> fixedwidth |> size 5 |> filled black |> move (-25, -2)
+              , rect 35 9 |> filled white |> makeTransparent 0 |> move (-75, 0) |> notifyTap ToInstructions
+              , rect 30 9 |> filled white |> makeTransparent 0 |> move (-25, 0) |> notifyTap ToCheatSheet
+              
+              -- hide grid button
+              , group [
+                   roundedRect 20 6 1 |> filled (rgb 173 224 230)
+                   , roundedRect 20 6 1 |> outlined (solid 1) (rgb 135 206 250)
+                   , text "hide grid" |> centered |> fixedwidth |> size 3.5 |> filled black |> move (0, -1)
+                ] |> move (50, 0) |> notifyTap HideGrid
+                
+                -- hide axis button
+              , group [
+                   roundedRect 20 6 1 |> filled (rgb 173 224 230)
+                   , roundedRect 20 6 1 |> outlined (solid 1) (rgb 135 206 250)
+                   , text "hide axis" |> centered |> fixedwidth |> size 3.5 |> filled black |> move (0, -1)
+                ] |> move (25, 0) |> notifyTap HideAxis
+              
+              -- scaling slider
+              , group [
+                  rect 25 0.5 |> filled black
+                  , text "2x" |> centered |> fixedwidth |> size 3 |> filled black |> move (0, 2)
+                  , group [ circle 1.3 |> filled white
+                          , circle 1.3 |> outlined (solid 1) (rgb 135 206 250)] |> notifyTap (Scale 2)
+                  
+                  , text "1.5x" |> centered |> fixedwidth |> size 3 |> filled black |> move (-6, 2)
+                  , group [ circle 1.3 |> filled white |> move (-6,0)
+                          , circle 1.3 |> outlined (solid 1) (rgb 135 206 250) |> move (-6,0)] |> notifyTap (Scale 1.5)
+                  
+                  , text "1x" |> centered |> fixedwidth |> size 3 |> filled black |> move (-12, 2)
+                  , group [circle 1.3 |> filled white |> move (-12,0)
+                          , circle 1.3 |> outlined (solid 1) (rgb 135 206 250) |> move (-12,0)] |> notifyTap (Scale 1)
+                  
+                  , text "2.5x" |> centered |> fixedwidth |> size 3 |> filled black |> move (6, 2)
+                  , group [circle 1.3 |> filled white |> move (6,0)
+                          , circle 1.3 |> outlined (solid 1) (rgb 135 206 250) |> move (6,0)] |> notifyTap (Scale 2.5)
+                  
+                  , text "3x" |> centered |> fixedwidth |> size 3 |> filled black |> move (12, 2)
+                  , group [circle 1.3 |> filled white |> move (12,0)
+                          , circle 1.3 |> outlined (solid 1) (rgb 135 206 250) |> move (12,0)] |> notifyTap (Scale 3)
+                  
+                  , ( if (abs (model.scale - 1)) < 0.001 then circle 1.3 |> filled (rgb 135 206 250) |> move (-12,0)
+                         else if (abs (model.scale - 1.5)) < 0.001 then circle 1.3 |> filled (rgb 135 206 250) |> move (-6,0)
+                         else if (abs (model.scale - 2)) < 0.001 then circle 1.3 |> filled (rgb 135 206 250)
+                         else if (abs (model.scale - 2.5)) < 0.001 then circle 1.3 |> filled (rgb 135 206 250) |> move (6,0)
+                         else if (abs (model.scale - 3)) < 0.001 then circle 1.3 |> filled (rgb 135 206 250) |> move (12,0) 
+                         else circle 0.00001 |> filled white
+                     )
+                  
+                
+                ] |> move (78, -2)
+                  -- Responsible for indicating that we are in the grid page in the top navigation bar
+                  , ( case model.state of
+                      Grid -> rect 15 10 |> filled (rgb 135 206 250) |> makeTransparent 0.7 |> move (-49, 0)
+                      otherwise -> rect 0.00001 0.00001 |> filled white
+                  )
+              ] |> move (0, 58.5)
+            
+            -- Responsible for drawing the bottom bottom bar (Vector addition, Multiplication, Operation)
+            
+            , group 
+              [rect 120 10 
+                  |> filled white
+              , rect 120 10 
+                  |> outlined (solid 1) (rgb 135 206 250)
+              , group [
+                  rect 60 8 |> filled white |> move (4, 1)
+                  , text "Vector Add/Mult" |> centered |> fixedwidth |> size 4 |> filled black  
+                  ] |> move (-33.5, -1) |> notifyTap VectorAddMultDropDown
+              , group [
+                  rect 59 8 |> filled white |> move (1,1)
+                  , text "Vector Operations" |> centered |> fixedwidth |> size 4 |> filled black
+                  ] |> move (29, -1) |> notifyTap VectorOpDropDown
+              ] |> move (-35, 48.5)
+            
+            -- Vector Add/Mult Dropdown Page
+            
+            , (if model.vectorAMDrop then
+                group
+                  [ rect 60 100 |> filled white |> move (0, -5)
+                   , rect 60 100 |> outlined (solid 1) (rgb 135 206 250) |> move (0, -5)
+                   , rect 60 10 |> filled (rgb 135 206 250) |> makeTransparent 0.7 |> move (0.5, 50.5) |> notifyTap VectorAddMultDropDown
+                   
+                   ,group [
+                       
+                       -- Responsible for drawing the original vector coords, and selection option.
+                       text "original vector = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-0.5, 36)
+                       , group [
+                             rect 3 3 |> filled (if model.ogVector then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, 37) |> notifyTap OGVector
+                       , group [
+                             rect 8 10 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , rect 2 1 |> filled white |> move (0,5)
+                             , rect 2 1 |> filled white |> move (0,-5)
+                             , group [
+                                       text (Round.round 1 ((Tuple.first model.point1)/model.scale))
+                                         |> centered |> fixedwidth |> size 3 |> filled black |> move (0,1)
+                                       , text (Round.round 1 ((Tuple.second model.point1)/model.scale))
+                                         |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-3)
+                                     ]
+                       ] |> move (22, 35)
+                       
+                       -- responsible for drawing og vector setting drop down for vector customization
+                       
+                       , gear |> move (32, 35) |> notifyTap SettingsDrop1
+                       , if model.settingsDrop1
+                           then group [
+                                 rect 30 25 |> filled white 
+                                , rect 30 25 |> outlined (solid 1) (rgb 135 206 250) 
+                                , circle 2.5 |> filled (rgb 124 185 232) |> move (-10, 7.5) |> notifyTap (ChangeColor (rgb 124 185 232) 0)
+                                , circle 2.5 |> filled (rgb 255 212 204) |> move (0, 7.5) |> notifyTap (ChangeColor (rgb 255 212 204) 0)
+                                , circle 2.5 |> filled (rgb 201 255 229) |> move (10, 7.5) |> notifyTap (ChangeColor (rgb 201 255 229) 0)
+                                , circle 2.5 |> filled (rgb 255 195 77) |> move (-10, 0) |> notifyTap (ChangeColor (rgb 255 195 77) 0)
+                                , circle 2.5 |> filled (rgb 217 179 255) |> move (0, 0) |> notifyTap (ChangeColor (rgb 217 179 255) 0)
+                                , circle 2.5 |> filled lightCharcoal |> move (10, 0) |> notifyTap (ChangeColor lightCharcoal 0)
+                                ] |> move (52, 31)
+                            else rect 0.0001 0.0001 |> filled white
+                       
+                       -- Responsible for drawing scalar value 1, selection option, and increment/decrement option.
+                       
+                       , text "scalar value 1 = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-1, 23)
+                       , group [
+                             rect 3 3 |> filled (if model.sVal1 then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, 24) |> notifyTap SVal1
+                       , group [
+                             rect 8 8 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , text (Round.round 1 model.scalar1) |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-1)
+                       ] |> move (22, 23)
+                       , group [
+                             triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 90) |> move (0,2) |> notifyTap Inc_S1
+                             , triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 270) |> move (0,-2) |> notifyTap Dec_S1
+                       ] |> move (32, 23)
+                        
+                       -- Responsible for drawing the second vector coords, and selection option.
+                        
+                       , text "second vector = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-2, 10)
+                       , group [
+                             rect 3 3 |> filled (if model.secVector then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, 11) |> notifyTap SecVector
+                       , group [
+                             rect 8 10 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , rect 2 1 |> filled white |> move (0,5)
+                             , rect 2 1 |> filled white |> move (0,-5)
+                             , group [
+                                       text (if model.secVector && model.ogVector && model.addVector 
+                                               then (Round.round 1 ((Tuple.first (sub model.point2 model.point1))/model.scale))
+                                               else (Round.round 1 ((Tuple.first model.point2)/model.scale))
+                                            )
+                                         |> centered |> fixedwidth |> size 3 |> filled black |> move (0,1)
+                                       , text (if model.secVector && model.ogVector && model.addVector 
+                                               then (Round.round 1 ((Tuple.second (sub model.point2 model.point1))/model.scale))
+                                               else (Round.round 1 ((Tuple.second model.point2)/model.scale))
+                                              )
+                                         |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-3)
+                                     ]
+                       ] |> move (22, 10)
+                       
+                       -- responsible for drawing second vector setting drop down for vector customization
+                       
+                       , gear |> move (32, 10) |> notifyTap SettingsDrop2
+                       , if model.settingsDrop2
+                           then group [
+                                 rect 30 25 |> filled white 
+                                , rect 30 25 |> outlined (solid 1) (rgb 135 206 250)
+                                , circle 2.5 |> filled (rgb 124 185 232) |> move (-10, 7.5) |> notifyTap (ChangeColor (rgb 124 185 232) 1)
+                                , circle 2.5 |> filled (rgb 255 212 204) |> move (0, 7.5) |> notifyTap (ChangeColor (rgb 255 212 204) 1)
+                                , circle 2.5 |> filled (rgb 201 255 229) |> move (10, 7.5) |> notifyTap (ChangeColor (rgb 201 255 229) 1)
+                                , circle 2.5 |> filled (rgb 255 195 77) |> move (-10, 0) |> notifyTap (ChangeColor (rgb 255 195 77) 1)
+                                , circle 2.5 |> filled (rgb 217 179 255) |> move (0, 0) |> notifyTap (ChangeColor (rgb 217 179 255) 1)
+                                , circle 2.5 |> filled lightCharcoal |> move (10, 0) |> notifyTap (ChangeColor lightCharcoal 1)
+                                ] |> move (52, 6)
+                            else rect 0.0001 0.0001 |> filled white
+                       
+                       -- Responsible for drawing scalar value 2, selection option, and increment/decrement option.
+                       
+                       , text "scalar value 2 = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-1, -3)
+                       , group [
+                             rect 3 3 |> filled (if model.sVal2 then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -2) |> notifyTap SVal2
+                       , group [
+                             rect 8 8 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , text (Round.round 1 model.scalar2) |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-1)
+                       ] |> move (22, -3)
+                       
+                       , group [
+                             triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 90) |> move (0,2) |> notifyTap Inc_S2
+                             , triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 270) |> move (0,-2) |> notifyTap Dec_S2
+                       ] |> move (32, -3)
+                       
+                       -- Responsible for drawing the third vector coords, and selection option.
+                       
+                       , text "Third vector = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-2.5, -14)
+                       , group [
+                             rect 3 3 |> filled (if model.thirdVector then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -13) |> notifyTap ThirdVector
+                       , group [
+                             rect 8 10 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , rect 2 1 |> filled white |> move (0,5)
+                             , rect 2 1 |> filled white |> move (0,-5)
+                             , group [
+                                       text (if model.ogVector && model.secVector && model.thirdVector && model.addVector
+                                                  then (Round.round 1 ((Tuple.first (sub model.point3 model.point2))/model.scale))
+                                                  else (if model.ogVector && model.thirdVector && model.addVector
+                                                           then (Round.round 1 ((Tuple.first (sub model.point3 model.point1))/model.scale))
+                                                           else (Round.round 1 ((Tuple.first model.point3)/model.scale))
+                                                       )
+                                              )
+                                         |> centered |> fixedwidth |> size 3 |> filled black |> move (0,1)
+                                       , text (if model.ogVector && model.secVector && model.thirdVector && model.addVector
+                                                  then (Round.round 1 ((Tuple.second (sub model.point3 model.point2))/model.scale))
+                                                  else (if model.ogVector && model.thirdVector && model.addVector
+                                                           then (Round.round 1 ((Tuple.second (sub model.point3 model.point1))/model.scale))
+                                                           else (Round.round 1 ((Tuple.second model.point3)/model.scale))
+                                                       )
+                                              )
+                                         |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-3)
+                                     ]
+                       ] |> move (22, -15)
+                       
+                       -- responsible for drawing third vector setting drop down for vector customization
+                       
+                       , gear |> move (32, -15) |> notifyTap SettingsDrop3
+                       , if model.settingsDrop3
+                           then group [
+                                 rect 30 25 |> filled white 
+                                , rect 30 25 |> outlined (solid 1) (rgb 135 206 250)
+                                , circle 2.5 |> filled (rgb 124 185 232) |> move (-10, 7.5) |> notifyTap (ChangeColor (rgb 124 185 232) 2)
+                                , circle 2.5 |> filled (rgb 255 212 204) |> move (0, 7.5) |> notifyTap (ChangeColor (rgb 255 212 204) 2)
+                                , circle 2.5 |> filled (rgb 201 255 229) |> move (10, 7.5) |> notifyTap (ChangeColor (rgb 201 255 229) 2)
+                                , circle 2.5 |> filled (rgb 255 195 77) |> move (-10, 0) |> notifyTap (ChangeColor (rgb 255 195 77) 2)
+                                , circle 2.5 |> filled (rgb 217 179 255) |> move (0, 0) |> notifyTap (ChangeColor (rgb 217 179 255) 2)
+                                , circle 2.5 |> filled lightCharcoal |> move (10, 0) |> notifyTap (ChangeColor lightCharcoal 2)
+                                ] |> move (52, -19)
+                            else rect 0.0001 0.0001 |> filled white
+                       
+                       -- Responsible for drawing scalar value 3, selection option, and increment/decrement option.
+                       
+                       , text "scalar value 3 = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-1, -28)
+                       , group [
+                             rect 3 3 |> filled (if model.sVal3 then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -27) |> notifyTap SVal3
+                       , group [
+                             rect 8 8 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , text (Round.round 1 model.scalar3) |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-1)
+                       ] |> move (22, -28)
+                       
+                       , group [
+                             triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 90) |> move (0,2) |> notifyTap Inc_S3
+                             , triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 270) |> move (0,-2) |> notifyTap Dec_S3
+                       ] |> move (32, -28)
+                       
+                       -- Responsible for drawing the resultant vector selection option and coords
+                       
+                       , text "resultant vector = " |> centered |> fixedwidth |> size 3 |> filled black |> move (0.5, -39) 
+                       , group [
+                             rect 3 3 |> filled (if model.resVector then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -38) |> notifyTap ResVector
+                       , group [
+                             rect 8 10 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , rect 2 1 |> filled white |> move (0,5)
+                             , rect 2 1 |> filled white |> move (0,-5)
+                             , if model.resVector 
+                                then (if model.ogVector && model.secVector && not model.thirdVector
+                                        then group [
+                                               text (Round.round 1 ((Tuple.first model.point2)/model.scale))
+                                                 |> centered |> fixedwidth |> size 3 |> filled black |> move (0,1)
+                                               , text (Round.round 1 ((Tuple.second model.point2)/model.scale))
+                                                 |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-3)
+                                             ]
+                                        else (if model.ogVector && model.thirdVector
+                                                 then group [
+                                                         text (Round.round 1 ((Tuple.first model.point3)/model.scale))
+                                                           |> centered |> fixedwidth |> size 3 |> filled black |> move (0,1)
+                                                         , text (Round.round 1 ((Tuple.second model.point3)/model.scale))
+                                                           |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-3)
+                                                       ]
+                                                 else rect 0.0001 0.0001 |> filled white
+                                             )
+                                     )
+                                  else rect 0.0001 0.0001 |> filled white
+                       ] |> move (22, -40)
+                       
+                       -- Responsible for drawing the multiply vectors selection option.
+                       
+                       , text "multiply vectors" |> centered |> fixedwidth |> size 3 |> filled black |> move (-1.5, -50)
+                       , group [
+                             rect 3 3 |> filled (if model.multVector then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -49) |> notifyTap MultVector
+                       
+                       -- Responsible for drawing the add vectors selection option.
+                       
+                       , text "add vectors together" |> centered |> fixedwidth |> size 3 |> filled black |> move (1, -55)
+                       , group [
+                             rect 3 3 |> filled (if model.addVector then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -54) |> notifyTap AddVector
+                         ] |> move (-7,2)
+                  ] |> move (-65, -2)
+                else 
+                  rect 0.0001 0.0001 |> filled white)
+            
+            -- Vector Operations Dropdown Page
+            
+            , (if model.vectorOpDrop then
+                group
+                  [ rect 59 90 |> filled white
+                   , rect 59 90 |> outlined (solid 1) (rgb 135 206 250)
+                   , rect 59 10 |> filled (rgb 135 206 250) |> makeTransparent 0.7 |> move (-0.3, 50.5) |> notifyTap VectorOpDropDown
+                   , group [
+                       
+                       -- responsible for drawing og vector setting drop down for vector customization
+                       text "original vector = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-0.5, 36)
+                       , group [
+                             rect 3 3 |> filled (if model.ogVector then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, 37) |> notifyTap OGVector
+                       , group [
+                             rect 8 10 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , rect 2 1 |> filled white |> move (0,5)
+                             , rect 2 1 |> filled white |> move (0,-5)
+                             , group [
+                                       text (Round.round 1 ((Tuple.first model.point1)/model.scale))
+                                         |> centered |> fixedwidth |> size 3 |> filled black |> move (0,1)
+                                       , text (Round.round 1 ((Tuple.second model.point1)/model.scale))
+                                         |> centered |> fixedwidth |> size 3 |> filled black |> move (0,-3)
+                                     ]
+                       ] |> move (22, 35)
+                       
+                       -- responsible for drawing og vector setting drop down for vector customization
+                       , gear |> move (32, 35) |> notifyTap SettingsDrop1
+                       , if model.settingsDrop1
+                           then group [
+                                 rect 30 25 |> filled white 
+                                , rect 30 25 |> outlined (solid 1) (rgb 135 206 250) 
+                                , circle 2.5 |> filled (rgb 124 185 232) |> move (-10, 7.5) |> notifyTap (ChangeColor (rgb 124 185 232) 0)
+                                , circle 2.5 |> filled (rgb 255 212 204) |> move (0, 7.5) |> notifyTap (ChangeColor (rgb 255 212 204) 0)
+                                , circle 2.5 |> filled (rgb 201 255 229) |> move (10, 7.5) |> notifyTap (ChangeColor (rgb 201 255 229) 0)
+                                , circle 2.5 |> filled (rgb 255 195 77) |> move (-10, 0) |> notifyTap (ChangeColor (rgb 255 195 77) 0)
+                                , circle 2.5 |> filled (rgb 217 179 255) |> move (0, 0) |> notifyTap (ChangeColor (rgb 217 179 255) 0)
+                                , circle 2.5 |> filled lightCharcoal |> move (10, 0) |> notifyTap (ChangeColor lightCharcoal 0)
+                                ] |> move (52, 31)
+                            else rect 0.0001 0.0001 |> filled white
+                       
+                       -- responsible for drawing the horizontal shear transformation selection option, factor value, and increment/decrement options.
+                       , text "horizontal shear" |> centered |> fixedwidth |> size 3 |> filled black |> move (-1, 23)
+                       , text "factor = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-7, 19)
+                       , group [
+                             rect 3 3 |> filled (if model.hShear then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, 24) |> notifyTap HShear
+                       , group [
+                             rect 8 8 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , text (Round.round 1 model.hShearFactor) |> centered |> fixedwidth |> size 3 |> filled black |> move (0, -1)
+                       ] |> move (22, 23)
+                       , group [
+                             triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 90) |> move (0,2) |> notifyTap Inc_HShear
+                             , triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 270) |> move (0,-2) |> notifyTap Dec_HShear
+                       ] |> move (32, 23)
+                       
+                       -- responsible for drawing the vertical shear transformation selection option, factor value, and increment/decrement options.
+                       
+                       , text "vertical shear" |> centered |> fixedwidth |> size 3 |> filled black |> move (-3, 10)
+                       , text "factor = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-7, 6)
+                       , group [
+                             rect 3 3 |> filled (if model.vShear then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, 11) |> notifyTap VShear
+                       , group [
+                             rect 8 8 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , text (Round.round 1 model.vShearFactor) |> centered |> fixedwidth |> size 3 |> filled black |> move (0, -1)
+                       ] |> move (22, 10)
+                       , group [
+                             triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 90) |> move (0,2) |> notifyTap Inc_VShear
+                             , triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 270) |> move (0,-2) |> notifyTap Dec_VShear
+                       ] |> move (32, 10)
+                       
+                       -- responsible for displaying the determinant of the current transformation/set of basis vectors
+                       , text "determinant = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-3, -3)
+                       , group [
+                             rect 3 3 |> filled (if model.determinant then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -2) |> notifyTap Determinant
+                       , group [
+                             rect 8 8 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , text (Round.round 1 (det (scalarMult2D model.basisX (1/model.scale)) (scalarMult2D model.basisY (1/model.scale)))) |> centered |> fixedwidth |> size 3 |> filled black |> move (0, -1)
+                       ] |> move (22, -3)
+                       
+                       -- responsible for drawing the eigen values of the current transformation/set of basis vectors 
+                       -- will display imaginary eigen values of NaN.
+                       , text "eigenvalue = " |> centered |> fixedwidth |> size 3 |> filled black |> move (-3.5, -15) 
+                       , group [
+                             rect 3 3 |> filled (if model.eigenvalue then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -14) |> notifyTap Eigenvalue
+                      , group [
+                             rect 8 8 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , text (Round.round 1 (Tuple.first (eigen (scalarMult2D model.basisX (1/model.scale)) (scalarMult2D model.basisY (1/model.scale))))) |> centered |> fixedwidth |> size 3 |> filled black |> move (0, -2.5)
+                             , text (Round.round 1 (Tuple.first (eigen (scalarMult2D model.basisX (1/model.scale)) (scalarMult2D model.basisY (1/model.scale))))) |> centered |> fixedwidth |> size 3 |> filled black |> move (0, 1.5)
+                       ] |> move (22, -15)
+                       
+                       -- responsible for drawing the rotate vector transformation selection option, 
+                       , text "rotate vector" |> centered |> fixedwidth |> size 3 |> filled black |> move (-3, -29)
+                       , group [
+                             rect 3 3 |> filled (if model.rotateVector then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -28) |> notifyTap RotateVector
+                             
+                       -- responsible for drawing the rotate vector transformation dropdown menu for selection of the degree of rotation.
+                       , gear |> move (32 , -28) |> notifyTap RotateVectorDrop
+                       , if model.rotateVectorDrop
+                           then group [
+                                 rect 30 25 |> filled white 
+                                , rect 30 25 |> outlined (solid 1) (rgb 135 206 250) 
+                                , text "45 degrees" |> centered |> fixedwidth |> size 3 |> filled black |> move (0, 7.5)
+                                , group [
+                                  rect 3 3 |> filled (if model.rotation == 45 then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                                  , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                                  ] |> move (-12, 9) |> notifyTap (ChangeRotation 45)
+                                , text "90 degrees" |> centered |> fixedwidth |> size 3 |> filled black
+                                , group [
+                                  rect 3 3 |> filled (if model.rotation == 90 then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                                  , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                                  ] |> move (-12, 1) |> notifyTap (ChangeRotation 90)
+                                , text "180 degrees" |> centered |> fixedwidth |> size 3 |> filled black |> move (0, -7.5)
+                                , group [
+                                  rect 3 3 |> filled (if model.rotation == 180 then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                                  , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                                  ] |> move (-12, -6) |> notifyTap (ChangeRotation 180)
+                                ] |> move (52, -34.5)
+                            else rect 0.0001 0.0001 |> filled white
+                       
+                       -- Responsible for drawing the increment/decrement options of the degree of rotation for the rotate vector transformation.
+                       , group [
+                             triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 90) |> move (0,2) |> notifyTap Inc_Rot
+                             , triangle 2 |> filled (rgb 135 206 250) |> rotate (degrees 270) |> move (0,-2) |> notifyTap Dec_Rot
+                       ] |> move (12, -28)
+                       
+                       -- Responsible for drawing the rotation value of the rotate vector transformation.
+                       , group [
+                             rect 8 8 |> outlined (solid 0.7) (rgb 135 206 250)
+                             , text (String.fromInt model.rotation) |> centered |> fixedwidth |> size 3 |> filled black |> move (0, -1)
+                       ] |> move (22, -28)
+                       
+                       -- Responsible for drawing the x/y-axis reflection option selection
+                       , text "x-axis reflection" |> centered |> fixedwidth |> size 3 |> filled black |> move (0, -35.5)
+                       , group [
+                             rect 3 3 |> filled (if model.xReflection then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -34.5) |> notifyTap XReflection
+                       , text "y-axis reflection" |> centered |> fixedwidth |> size 3 |> filled black |> move (0, -42)
+                       , group [
+                             rect 3 3 |> filled (if model.yReflection then (rgb 135 206 250) else white) |> makeTransparent 0.8
+                             , rect 3 3 |> outlined (solid 0.7) (rgb 135 206 250)
+                             ] |> move (-19, -41) |> notifyTap YReflection
+                         ] |> move (-7,2)
+                  ] |> move (-4.7, -2)
+                else 
+                  rect 0.0001 0.0001 |> filled white)
+            
+            -- Responsible for drawing the clear grid button
+            , group [
+                   roundedRect 20 6 1 |> filled (rgb 173 224 230)
+                   , roundedRect 20 6 1 |> outlined (solid 1) (rgb 135 206 250)
+                   , text "clear" |> centered |> fixedwidth |> size 4 |> filled black |> move (0, -1)
+                ] |> move (80, 48) |> notifyTap Clear
+
+            -- Responsible for drawing vectors
+            
+            , (case model.state2 of
+                  Start -> [rect 10 10 |> filled white]
+                  CheatSheet -> [rect 10 10 |> filled white]
+                  Grid -> [rect 10 10 |> filled white]
+                  Instructions -> [rect 10 10 |> filled white]
+                  Waiting ->
+                    [
+                    if model.ogVector then drawVector model.startPoint1 model.point1 model.v1Color (model.scale/2) else rect 0.0001 0.0001 |> filled white
+                    , if model.secVector then drawVector model.startPoint2 model.point2 model.v2Color (model.scale/2) else rect 0.0001 0.0001 |> filled white
+                    , if model.thirdVector then drawVector model.startPoint3 model.point3 model.v3Color (model.scale/2) else rect 0.0001 0.0001 |> filled white
+                    , if model.resVector 
+                        then (if model.ogVector && model.secVector && not model.thirdVector
+                                then drawVector (0,0) model.point2 (rgb 254 97 0) (model.scale/2)
+                                else (if model.ogVector && model.thirdVector
+                                         then drawVector (0,0) model.point3 (rgb 254 97 0) (model.scale/2)
+                                         else rect 0.0001 0.0001 |> filled white
+                                     )
+                             )
+                        else rect 0.0001 0.0001 |> filled white
+                    ]             
+                  Grabbed delta mouseAt ->
+                    (
+                      [
+                      if model.ogVector && model.index /= 0 
+                          then drawVector model.startPoint1 model.point1 model.v1Color (model.scale/2) 
+                          else (if model.ogVector && model.index == 0
+                                    then drawVector model.startPoint1 (add delta mouseAt) model.v1Color (model.scale/2) 
+                                    else rect 0.0001 0.0001 |> filled white )
+                      , if model.secVector && model.index /= 1 
+                          then (if model.ogVector && model.addVector && model.index == 0
+                                    then drawVector (add delta mouseAt) model.point2 model.v2Color (model.scale/2)
+                                    else drawVector model.startPoint2 model.point2 model.v2Color (model.scale/2) 
+                               ) 
+                          else (if model.secVector && model.index == 1
+                                    then drawVector model.startPoint2 (add delta mouseAt) model.v2Color (model.scale/2) 
+                                    else rect 0.0001 0.0001 |> filled white )
+                      , if model.thirdVector && model.index /= 2
+                          then (if model.ogVector && model.secVector && model.addVector && model.index == 1
+                                    then drawVector (add delta mouseAt) model.point3 model.v3Color (model.scale/2)
+                                    else (if model.ogVector && (not model.secVector) && model.addVector && model.index == 0
+                                             then drawVector (add delta mouseAt) model.point3 model.v3Color (model.scale/2)
+                                             else drawVector model.startPoint3 model.point3 model.v3Color (model.scale/2) 
+                                         )
+                               )
+                          else (if model.thirdVector && model.index == 2
+                                    then drawVector model.startPoint3 (add delta mouseAt) model.v3Color (model.scale/2) 
+                                    else rect 0.0001 0.0001 |> filled white )
+                      
+                      , rect 190 126 |> filled (rgba 255 255 0 0.01)
+                          |> notifyMouseUp Stop
+                          |> notifyLeave Stop
+                          |> notifyMouseMoveAt MouseMoveTo
+                      ]
+                    )
+               ) |> group 
+            
+            -- Responsible for drawing error text
+            , text model.errorText
+                |> centered 
+                |> fixedwidth 
+                |> size 7
+                |> filled red
+                |> makeTransparent (1 - 0.5*(model.time - model.startTime))
+            
+            ]
+            
+        otherwise -> [rect 10 10 |> filled white]
+
+
+-- responsible for calculating the eigen values of the inputed basis 2d vectors
+eigen xs ys = ( case (xs, ys) of
+                  ([a,c], [b,d]) -> (-1*(-(d+a) + sqrt ((d+a)^2 - 4*(a*d - b*c)))/2, -1*(-(d+a) - sqrt ((d+a)^2 - 4*(a*d - b*c)))/2)
+                  otherwise -> (0,0)
+              )
+              
+-- responsible for performing 2d vector-matrix multiplication 
+vMatrixMult xs ys us = ( case (xs, ys, us) of
+                         ([x1,x2], [y1, y2], (u1, u2)) -> (x1*u1 + y1*u2, x2*u1 + y2*u2)
+                         otherwise -> us
+                       )
+
+-- responsible for performing 2d matrix multiplication between two matrices
+matrixMult xs ys us vs = ( case [xs,ys,us,vs] of 
+                              [[x1, x2], [y1, y2], [u1, u2], [v1, v2]] -> ([x1*u1 + y1*u2, x1*v1 + y1*v2],[x2*u1 + y2*u2, x2*v1 + y2*v2]) 
+                              otherwise -> (xs, ys)
+                         )
+                         
+-- responsible for calculating the determinant of an inputted 2d matrix
+det xs ys = ( case (xs, ys) of
+                ([a,c], [b,d]) -> (a*d - b*c)
+                otherwise -> 69
+            )
+
+-- responsible for calculating the inverse matrix of an inputted 2d matrix
+inverse xs ys = ( case (xs, ys) of
+                    ([a,c], [b,d]) -> ( let deter = det xs ys
+                                        in ([d*deter, -b*deter],[-c*deter, a*deter])
+                                      )
+                    otherwise -> (xs, ys)
+                )
+
+-- responsible for testing the equality of two points
+pointEq (x,y) (u,v) = (abs (x - u) <= 0.1) && (abs (y - v) <= 0.1)
+
+-- responsible for basic vector operations
+sub (x,y) (u,v) = (x-u,y-v)
+add (x,y) (u,v) = (x+u,y+v)
+mult (x,y) z = (z*x, z*y)
+
+-- responsible for calculating the orthogonal complement between two vectors
+orthoComp2D : List Float -> List Float -> List Float
+orthoComp2D xs ys = vAdd2D xs (scalarMult2D ys (-((dotProd2D xs ys) / (dotProd2D ys ys))))
+
+-- responsible for perfomring 2D scalar multiplication on 2D basis vectors
+scalarMult2D : List Float -> Float -> List Float
+scalarMult2D xs n = [(index xs 0)*n, (index xs 1)*n]
+
+-- responsible for calculating the dotproduct of two 2d basis vectors
+dotProd2D : List Float -> List Float -> Float
+dotProd2D xs ys = ((index xs 0)*(index ys 0)) + ((index xs 1)*(index ys 1))
+
+-- responsible for adding two 2d basis vectors together
+vAdd2D : List Float -> List Float -> List Float
+vAdd2D xs ys = [(index xs 0) + (index ys 0), (index xs 1) + (index ys 1)]
+
+-- responsible for calculing the magnitude of a 2d basis vector
+vLen2D : List Float -> Float
+vLen2D xs = ((index xs 0)^2 + (index xs 1)^2)^(0.5)
+
+-- responsible for getting the value at an index of a list
+index : List Float -> Int -> Float
+index xs i =
+      case (xs, i) of
+          (_, 0) -> Maybe.withDefault 0 (List.head xs)
+          (_, _) -> index (Maybe.withDefault [1] (List.tail xs)) (i-1)
+
+-- responsible for calculating the value of the hypotenuse
+hyp a b = sqrt (a^2 + b^2)
+
+-- responsible for drawing a vector based on the starting/ending point, color and width
+drawVector (x1,y1) (x2,y2) clr width = let length = (hyp (x2 - x1) (y2 - y1)) 
+                                     in group [roundedRect length width (1.1*width)
+                                                 |> filled clr 
+                                               , triangle (2*width)
+                                                 |> filled clr
+                                                 |> rotate (degrees 60)
+                                                 |> move (-length/2 + (((3^(1/2))*width)), 0)
+                                                 |> notifyMouseDownAt (MouseDownAt (x2, y2)) 
+                                               ] 
+                                                 |> move (-length/2, 0)
+                                                 |> rotate (-1*(atan2 (y2 - y1) (x2 - x1))) 
+                                                 |> mirrorX
+                                                 |> move (x1,y1)
+               
+
+type Msg = Tick Float GetKeyState
+         | ToCheatSheet 
+         | ToGrid 
+         | ToInstructions
+         | ToStart
+         | HideGrid
+         | Scale Float
+         | Clear
+         | VectorAddMultDropDown
+         | VectorOpDropDown
+         | OGVector 
+         | SVal1
+         | SecVector
+         | SVal2
+         | ThirdVector
+         | SVal3
+         | ResVector
+         | MultVector
+         | AddVector
+         | HShear
+         | VShear
+         | Determinant
+         | Eigenvalue
+         | RotateVector
+         | XReflection
+         | YReflection
+         | MouseDownAt (Float,Float) (Float,Float)
+         | MouseMoveTo (Float,Float)
+         | Stop 
+         | Inc_S1
+         | Dec_S1
+         | Inc_S2
+         | Dec_S2
+         | Inc_S3
+         | Dec_S3
+         | SettingsDrop1
+         | SettingsDrop2
+         | SettingsDrop3
+         | ChangeColor Color Int
+         | Inc_HShear
+         | Dec_HShear
+         | Inc_VShear
+         | Dec_VShear
+         | ChangeRotation Int
+         | RotateVectorDrop
+         | Inc_Rot
+         | Dec_Rot
+         | HideAxis
+         | ChangeBackground Int
+         | StartDrop
+         | InstructionsMsg Huanh41.Inst.Msg
+         | CheatsheetMsg Sunw53.Cheatsheet.Msg
+         
+
+type State = Start 
+           | CheatSheet 
+           | Instructions 
+           | Grid 
+           | Waiting
+           | Grabbed 
+              (Float,Float) 
+              (Float,Float)
+
+update msg model =
+    case msg of
+        Tick t x ->
+            case model.state of 
+                Instructions ->
+                    { model | instructionsModel = Huanh41.Inst.update
+                                                    (Huanh41.Inst.Tick t x)
+                                                    model.instructionsModel
+                    }
+                CheatSheet ->
+                    { model | cheatsheetModel = Sunw53.Cheatsheet.update
+                                                    (Sunw53.Cheatsheet.Tick t x)
+                                                    model.cheatsheetModel
+                    }
+                otherwise ->
+                    { model | time = t }
+        
+        HideAxis -> {model | hideAxis = not model.hideAxis}
+        
+        Clear -> (if model.addVector || model.multVector 
+                      then { model | errorText = "Cannot Clear while Add/Mult is in Progress", startTime = model.time }
+                      else { model | ogVector = False, secVector = False, thirdVector = False, resVector = False
+                                   , sVal1 = False, sVal2 = False, sVal3 = False
+                                   , settingsDrop1 = False, settingsDrop2 = False, settingsDrop3 = False}
+                 
+                 )
+        
+        Inc_Rot -> if model.rotateVector then {model | errorText = "Cannot increment while rotating", startTime = model.time }
+                                         else {model | rotation = model.rotation + 1}
+        Dec_Rot -> if model.rotateVector then {model | errorText = "Cannot decrement while rotating", startTime = model.time }
+                                         else {model | rotation = model.rotation - 1}
+        
+        ChangeRotation x -> if model.rotateVector then {model | errorText = "Cannot change while rotating", startTime = model.time} else { model | rotation = x}
+        
+        RotateVectorDrop -> {model | rotateVectorDrop = not model.rotateVectorDrop}
+        
+        HShear -> if (model.vShear || model.xReflection || model.yReflection || model.rotateVector)
+                      then
+                        { model | errorText = "Composite transformations are not yet supported", startTime = model.time}
+                      else
+                        { model | hShear = not model.hShear
+                          , basisX = if not model.hShear 
+                                        then (Tuple.first (matrixMult model.basisX model.basisY [1, model.hShearFactor] [0, 1]))
+                                        else (Tuple.first (matrixMult model.basisX model.basisY
+                                                                        (Tuple.first (inverse [1, model.hShearFactor] [0, 1]))
+                                                                        (Tuple.second (inverse [1, model.hShearFactor] [0, 1]))
+                                                                        ))
+                          , basisY = if not model.hShear 
+                                        then (Tuple.second (matrixMult model.basisX model.basisY [1, model.hShearFactor] [0, 1]))
+                                        else (Tuple.second (matrixMult model.basisX model.basisY
+                                                                        (Tuple.first (inverse [1, model.hShearFactor] [0, 1]))
+                                                                        (Tuple.second (inverse [1, model.hShearFactor] [0, 1]))
+                                                                        ))
+                         , point1 = if not model.hShear
+                                       then (Tuple.first model.point1 + model.hShearFactor*(Tuple.second model.point1), (Tuple.second model.point1))
+                                       else (Tuple.first model.point1 - model.hShearFactor*(Tuple.second model.point1), (Tuple.second model.point1))
+                       }
+        VShear -> if (model.hShear || model.xReflection || model.yReflection || model.rotateVector)
+                      then { model | errorText = "Composite transformations are not yet supported", startTime = model.time}
+                      else
+                      { model | vShear = not model.vShear
+                            , basisX = if not model.vShear 
+                                        then (Tuple.first (matrixMult model.basisX model.basisY [1, 0] [model.vShearFactor, 1]))
+                                        else (Tuple.first (matrixMult model.basisX model.basisY
+                                                                        (Tuple.first (inverse [1, 0] [model.vShearFactor, 1]))
+                                                                        (Tuple.second (inverse [1, 0] [model.vShearFactor, 1]))
+                                                                        ))
+                          , basisY = if not model.vShear 
+                                        then (Tuple.second (matrixMult model.basisX model.basisY [1, 0] [model.vShearFactor, 1]))
+                                        else (Tuple.second (matrixMult model.basisX model.basisY
+                                                                        (Tuple.first (inverse [1, 0] [model.vShearFactor, 1]))
+                                                                        (Tuple.second (inverse [1, 0] [model.vShearFactor, 1]))
+                                                                        ))
+                          , point1 = if not model.vShear
+                                       then ((Tuple.first model.point1), Tuple.second model.point1 + model.vShearFactor*(Tuple.first model.point1))
+                                       else ((Tuple.first model.point1), Tuple.second model.point1 - model.vShearFactor*(Tuple.first model.point1))
+                  
+                  }
+        Determinant -> { model | determinant = not model.determinant}
+        Eigenvalue -> { model | eigenvalue = not model.eigenvalue}
+        RotateVector -> if (model.hShear || model.vShear || model.xReflection || model.yReflection)
+                      then
+                        { model | errorText = "Composite transformations are not yet supported", startTime = model.time}
+                      else
+                      { model | rotateVector = not model.rotateVector
+                                 , basisX = if not model.rotateVector
+                                              then (Tuple.first (matrixMult model.basisX model.basisY [cos (degrees (toFloat model.rotation)), sin (degrees (toFloat model.rotation))] [-1*sin (degrees (toFloat model.rotation)), cos (degrees (toFloat model.rotation))]))
+                                              else (Tuple.first (matrixMult model.basisX model.basisY
+                                                                        [cos (degrees (-1*(toFloat model.rotation))), sin (degrees (-1*(toFloat model.rotation)))]
+                                                                        [-1*sin (degrees (-1*(toFloat model.rotation))), cos (degrees (-1*(toFloat model.rotation)))])
+                                                                        )
+                                , basisY = if not model.rotateVector
+                                              then (Tuple.second (matrixMult model.basisX model.basisY [cos (degrees (toFloat model.rotation)), sin (degrees (toFloat model.rotation))] [-1*sin (degrees (toFloat model.rotation)), cos (degrees (toFloat model.rotation))]))
+                                              else (Tuple.second (matrixMult model.basisX model.basisY
+                                                                        [cos (degrees (-1*(toFloat model.rotation))), sin (degrees (-1*(toFloat model.rotation)))]
+                                                                        [-1*sin (degrees (-1*(toFloat model.rotation))), cos (degrees (-1*(toFloat model.rotation)))])
+                                                                        )
+                                , point1 = if not model.rotateVector 
+                                              then vMatrixMult [cos (degrees (-1*(toFloat model.rotation))), sin (degrees (-1*(toFloat model.rotation)))] [-1*sin (degrees (-1*(toFloat model.rotation))), cos (degrees (-1*(toFloat model.rotation)))] model.point1
+                                              else vMatrixMult [cos (degrees (toFloat model.rotation)), sin (degrees (toFloat model.rotation))] [-1*sin (degrees (toFloat model.rotation)), cos (degrees (toFloat model.rotation))] model.point1
+                                                                        
+                      
+                      }
+        XReflection -> if (model.hShear || model.vShear || model.yReflection || model.rotateVector)
+                          then { model | errorText = "Composite transformations are not yet supported", startTime = model.time}
+                          else
+                    { model | xReflection = not model.xReflection
+                                 , basisX = if not model.xReflection
+                                               then (Tuple.first (matrixMult model.basisX model.basisY [1, 0] [0, -1]))
+                                               else (Tuple.first (matrixMult model.basisX model.basisY
+                                                                        (Tuple.first (inverse [1, 0] [0, -1]))
+                                                                        (Tuple.second (inverse [1, 0] [0, -1]))
+                                                                        ))
+                                , basisY = if not model.xReflection
+                                               then (Tuple.second (matrixMult model.basisX model.basisY [1, 0] [0, -1]))
+                                               else (Tuple.second (matrixMult model.basisX model.basisY
+                                                                        (Tuple.first (inverse [1, 0] [0, -1]))
+                                                                        (Tuple.second (inverse [1, 0] [0, -1]))
+                                                                        ))
+                                ,  point1 = if not model.xReflection
+                                       then ((Tuple.first model.point1), -1*(Tuple.second model.point1))
+                                       else ((Tuple.first model.point1), -1*(Tuple.second model.point1))
+                                                                        
+                       }
+        YReflection -> if (model.hShear || model.vShear || model.xReflection || model.rotateVector)
+                      then
+                        { model | errorText = "Composite transformations are not yet supported", startTime = model.time}
+                      else
+                      { model | yReflection = not model.yReflection 
+                                 , basisX = if not model.xReflection
+                                               then (Tuple.first (matrixMult model.basisX model.basisY [-1, 0] [0, 1]))
+                                               else (Tuple.first (matrixMult model.basisX model.basisY
+                                                                        (Tuple.first (inverse [1, 0] [0, -1]))
+                                                                        (Tuple.second (inverse [1, 0] [0, -1]))
+                                                                        ))
+                                , basisY = if not model.xReflection
+                                               then (Tuple.second (matrixMult model.basisX model.basisY [-1, 0] [0, 1]))
+                                               else (Tuple.second (matrixMult model.basisX model.basisY
+                                                                        (Tuple.first (inverse [-1, 0] [0, 1]))
+                                                                        (Tuple.second (inverse [-1, 0] [0, 1]))
+                                                                        ))
+                                ,  point1 = if not model.xReflection
+                                       then (-1*(Tuple.first model.point1), (Tuple.second model.point1))
+                                       else (-1*(Tuple.first model.point1), (Tuple.second model.point1))
+                        
+                       }
+        
+        ChangeColor clr vector -> { model | v1Color = if vector == 0 then clr else model.v1Color
+                                            , v2Color = if vector == 1 then clr else model.v2Color
+                                            , v3Color = if vector == 2 then clr else model.v3Color
+                                            }
+        
+        ChangeBackground x -> { model | backGroundColor = x }
+        
+        StartDrop -> { model | startDrop = not model.startDrop}
+        
+        Inc_S1 -> (if not model.multVector then { model | scalar1 = model.scalar1 + 0.1} else model)
+        Dec_S1 -> (if not model.multVector then { model | scalar1 = model.scalar1 - 0.1} else model)
+        Inc_S2 -> (if not model.multVector then { model | scalar2 = model.scalar2 + 0.1} else model)
+        Dec_S2 -> (if not model.multVector then { model | scalar2 = model.scalar2 - 0.1} else model)
+        Inc_S3 -> (if not model.multVector then { model | scalar3 = model.scalar3 + 0.1} else model)
+        Dec_S3 -> (if not model.multVector then { model | scalar3 = model.scalar3 - 0.1} else model)
+        
+        Inc_HShear -> (if not model.hShear then { model | hShearFactor = model.hShearFactor + 0.1} else model)
+        Dec_HShear -> (if not model.hShear then { model | hShearFactor = model.hShearFactor - 0.1} else model)
+        Inc_VShear -> (if not model.vShear then { model | vShearFactor = model.vShearFactor + 0.1} else model)
+        Dec_VShear -> (if not model.vShear then { model | vShearFactor = model.vShearFactor - 0.1} else model)
+        
+        SettingsDrop1 -> {model | settingsDrop1 = not model.settingsDrop1}
+        SettingsDrop2 -> {model | settingsDrop2 = not model.settingsDrop2}
+        SettingsDrop3 -> {model | settingsDrop3 = not model.settingsDrop3}
+        
+        HideGrid -> { model | hideGrid = not model.hideGrid }
+        
+        OGVector -> { model | ogVector = if model.addVector && model.ogVector
+                                            then True
+                                            else (if model.multVector then model.ogVector else not model.ogVector )
+                              , errorText = if model.addVector && model.ogVector then "Cannot remove vectors while adding" 
+                                                  else (if model.multVector then "Cannot select/unselect while multiplying" else model.errorText )
+                              , startTime = if model.addVector && model.ogVector || model.multVector then model.time else model.startTime
+                     }
+        
+        SVal1 -> { model | sVal1 = (if not model.sVal1 && model.ogVector && not model.multVector
+                                      then True
+                                      else
+                                        (if model.multVector
+                                          then model.sVal1
+                                          else False)
+                                    )
+                            , errorText = if not model.sVal1 && not model.ogVector 
+                                            then "Need corresponding vector to be selected"
+                                            else (if model.multVector
+                                                    then "Cannot select/unselect while multiplying"
+                                                    else model.errorText
+                                                 )
+                            , startTime = if not model.sVal1 && not model.ogVector || model.multVector
+                                            then model.time
+                                            else model.startTime
+                          }
+        
+        SecVector -> { model | secVector = if model.addVector && model.secVector 
+                                              then True 
+                                              else (if model.multVector then model.secVector else not model.secVector )
+                                              
+                              , errorText = if model.addVector && model.secVector then "Cannot remove vectors while adding" 
+                                              else (if model.multVector then "Cannot select/unselect while multiplying" else model.errorText )
+                              , startTime = if model.addVector && model.secVector || model.multVector then model.time else model.startTime
+                     }
+        
+        SVal2 -> { model | sVal2 = (if not model.sVal2 && model.secVector && not model.multVector
+                                      then True
+                                      else
+                                        (if model.multVector
+                                          then model.sVal2
+                                          else False)
+                                    )
+                            , errorText = if not model.sVal2 && not model.secVector 
+                                            then "Need corresponding vector to be selected"
+                                            else (if model.multVector
+                                                    then "Cannot select/unselect while multiplying"
+                                                    else model.errorText
+                                                 )
+                            , startTime = if not model.sVal2 && not model.secVector || model.multVector
+                                            then model.time
+                                            else model.startTime
+                           }
+                           
+        ThirdVector -> { model | thirdVector = if model.addVector && model.thirdVector 
+                                                  then True
+                                                  else (if model.multVector then model.thirdVector else not model.thirdVector )
+                                 , errorText = if model.addVector && model.thirdVector then "Cannot remove vectors while adding"
+                                                    else (if model.multVector then "Cannot select/unselect while multiplying" else model.errorText )
+                                 , startTime = if model.addVector && model.thirdVector || model.multVector then model.time else model.startTime
+                        }
+        
+        SVal3 -> { model | sVal3 = (if not model.sVal3 && model.thirdVector && not model.multVector
+                                      then True
+                                      else
+                                        (if model.multVector
+                                          then model.sVal3
+                                          else False)
+                                    )
+                                    
+                          , errorText = if not model.sVal3 && not model.thirdVector 
+                                            then "Need corresponding vector to be selected"
+                                            else (if model.multVector
+                                                    then "Cannot select/unselect while multiplying"
+                                                    else model.errorText
+                                                 )
+                            , startTime = if not model.sVal3 && not model.thirdVector || model.multVector
+                                            then model.time
+                                            else model.startTime
+                  }
+        
+        ResVector -> { model | resVector = model.addVector && not model.resVector 
+                               , errorText = if not model.resVector && not model.addVector then "Cannot display without adding" else model.errorText
+                               , startTime = if not model.resVector && not model.addVector then model.time else model.startTime}
+        
+        MultVector -> { model | multVector = if (model.sVal1 || model.sVal2 || model.sVal3) && not model.addVector then not model.multVector else model.multVector
+                               , point1 = if model.sVal1 && not model.addVector && model.ogVector && not model.multVector
+                                             then mult model.point1 model.scalar1 
+                                             else (if model.sVal1 && not model.addVector && model.ogVector && model.multVector
+                                                     then mult model.point1 (1/model.scalar1)
+                                                     else model.point1
+                                                  )
+                               , point2 = if model.sVal2 && not model.addVector && model.secVector && not model.multVector
+                                             then mult model.point2 model.scalar2 
+                                             else (if model.sVal2 && not model.addVector && model.secVector && model.multVector
+                                                     then mult model.point2 (1/model.scalar2)
+                                                     else model.point2
+                                                  )
+                              , point3 = if model.sVal3 && not model.addVector && model.thirdVector && not model.multVector
+                                             then mult model.point3 model.scalar3 
+                                             else (if model.sVal3 && not model.addVector && model.thirdVector && model.multVector
+                                                     then mult model.point3 (1/model.scalar3)
+                                                     else model.point3
+                                                  )
+                             , errorText = if not (model.sVal1 || model.sVal2 || model.sVal3) then "Insufficient vectors for multiplication" else model.errorText
+                             , startTime = if not (model.sVal1 || model.sVal2 || model.sVal3) then model.time else model.startTime
+                      }
+        
+        AddVector -> { model | addVector = model.ogVector && (model.secVector || model.thirdVector) && not model.addVector
+                               , resVector = not model.addVector && model.resVector 
+                               , startPoint2 = if model.ogVector && model.secVector && not model.addVector
+                                                 then model.point1
+                                                 else (if model.ogVector && model.secVector && model.addVector
+                                                          then (0,0)
+                                                          else model.startPoint2
+                                                      )
+                               , point2 = if model.ogVector && model.secVector && not model.addVector
+                                                 then (add model.point2 model.point1)
+                                                 else ( if model.ogVector && model.secVector && model.addVector
+                                                           then (sub model.point2 model.point1)
+                                                           else model.point2
+                                                      )
+                              , startPoint3 = if model.ogVector && model.secVector && model.thirdVector && not model.addVector
+                                                  then (add model.point2 model.point1)
+                                                  else (if model.ogVector && model.thirdVector && not model.addVector
+                                                           then model.point1
+                                                           else (if model.ogVector && model.secVector && model.thirdVector && model.addVector
+                                                                     then (0,0)
+                                                                     else (if model.ogVector && model.thirdVector && model.addVector
+                                                                               then (0,0)
+                                                                               else model.startPoint3
+                                                                          )
+                                                                 )
+                                                       )
+                               , point3 = if model.ogVector && model.secVector && model.thirdVector && not model.addVector
+                                                  then (add model.point3 (add model.point1 model.point2))
+                                                  else (if model.ogVector && model.thirdVector && not model.addVector
+                                                           then (add model.point3 model.point1)
+                                                           else (if model.ogVector && model.secVector && model.thirdVector && model.addVector
+                                                                     then (sub model.point3 model.point2)
+                                                                     else (if model.ogVector && model.thirdVector && model.addVector
+                                                                               then (sub model.point3 model.point1)
+                                                                               else model.point3
+                                                                          )
+                                                                 )
+                                                       )
+                             , errorText = if not (model.ogVector || model.secVector || model.thirdVector) then "Insufficient vectors for addition" else model.errorText
+                             , startTime = if not (model.ogVector || model.secVector || model.thirdVector) then model.time else model.startTime
+                     
+                     }
+        
+        VectorAddMultDropDown -> { model | vectorAMDrop = not model.vectorAMDrop
+                                           , vectorOpDrop = if not model.vectorAMDrop && model.vectorOpDrop then False else model.vectorOpDrop}
+        
+        VectorOpDropDown -> { model | vectorOpDrop = not model.vectorOpDrop
+                                      , vectorAMDrop = if not model.vectorOpDrop && model.vectorAMDrop then False else model.vectorAMDrop
+                                      , point2 = if not model.vectorOpDrop && model.vectorAMDrop then (-5, 5) else model.point2
+                                      , point3 = if not model.vectorOpDrop && model.vectorAMDrop then (-5, -5) else model.point3
+                                      , multVector = if not model.vectorOpDrop && model.vectorAMDrop then False else model.multVector
+                                      , addVector = if not model.vectorOpDrop && model.vectorAMDrop then False else model.addVector
+                                      , secVector = if not model.vectorOpDrop && model.vectorAMDrop then False else model.secVector
+                                      , thirdVector = if not model.vectorOpDrop && model.vectorAMDrop then False else model.thirdVector
+                                      , sVal1 = if not model.vectorOpDrop && model.vectorAMDrop then False else model.sVal1
+                                      , sVal2 = if not model.vectorOpDrop && model.vectorAMDrop then False else model.sVal2
+                                      , sVal3 = if not model.vectorOpDrop && model.vectorAMDrop then False else model.sVal3
+                                      , scalar1 = if not model.vectorOpDrop && model.vectorAMDrop then 1 else model.scalar1
+                                      , scalar2 = if not model.vectorOpDrop && model.vectorAMDrop then 1 else model.scalar2
+                                      , scalar3 =if not model.vectorOpDrop && model.vectorAMDrop then 1 else model.scalar3
+                            }
+        
+        Scale x -> if not (model.vShear || model.hShear || model.rotateVector || model.xReflection || model.yReflection)
+                      then 
+                        { model | scale = x, basisX = [5*x, 0], basisY = [0, 5*x]
+                                   , point1 = mult model.point1 (x/model.scale)
+                                   , point2 = mult model.point2 (x/model.scale)
+                                   , point3 = mult model.point3 (x/model.scale)
+                                   , startPoint1 = mult model.startPoint1 (x/model.scale)
+                                   , startPoint2 = mult model.startPoint2 (x/model.scale)
+                                   , startPoint3 = mult model.startPoint3 (x/model.scale)
+                         }
+                       else
+                         { model | errorText = "Cannot scale while performing operations", startTime = model.time }
+        
+        MouseDownAt orig mouseAt ->
+            { model | state2 = Grabbed (sub orig mouseAt) mouseAt
+                    , index = (if pointEq model.point1 orig then 0
+                               else (if pointEq model.point2 orig then 1
+                                     else (if pointEq model.point3 orig then 2
+                                           else 69
+                                          )
+                                    )
+                               )
+                    
+                    }
+        MouseMoveTo new ->
+            case model.state2 of 
+              Grabbed delta _ ->
+                { model | state2 = Grabbed delta new }
+              _ -> 
+                model
+        Stop -> 
+            case model.state2 of 
+              Grabbed delta mouseAt ->
+                { model | state2 = Waiting
+                        --, points = (add delta mouseAt) :: model.points
+                        , point1 = if model.index == 0 then add delta mouseAt else model.point1
+                        , point2 = if model.index == 1 then add delta mouseAt else model.point2
+                        , point3 = if model.index == 2 then add delta mouseAt else model.point3
+                        , startPoint2 = if model.index == 0 && model.secVector && model.addVector
+                                            then (add delta mouseAt)
+                                            else model.startPoint2
+                        , startPoint3 = if model.index == 0 && (not model.secVector) && model.thirdVector && model.addVector
+                                            then (add delta mouseAt)
+                                            else (if model.index == 1 && model.ogVector && model.thirdVector && model.addVector
+                                                    then (add delta mouseAt)
+                                                    else model.startPoint3
+                                                 )
+                        }
+              _ -> 
+                  model
+        
+        ToInstructions ->
+           { model | state = Instructions, instructionsModel = Huanh41.Inst.init  }
+
+        
+        InstructionsMsg instructionsMsg ->
+            case model.state of 
+                Instructions ->
+                    { model | instructionsModel = Huanh41.Inst.update instructionsMsg model.instructionsModel}
+                otherwise ->
+                    model
+        
+        ToStart ->
+              { model | state = Start }
+
+        CheatsheetMsg cheatsheetMsg ->
+            case model.state of
+                CheatSheet -> 
+                    { model | cheatsheetModel = Sunw53.Cheatsheet.update cheatsheetMsg model.cheatsheetModel}
+                otherwise ->
+                    model
+        
+        ToCheatSheet  ->
+              { model | state = CheatSheet  }
+        ToGrid  ->
+              { model | state = Grid  }
+                
+
+type alias Model =
+    { time : Float
+    , state : State
+    , basisX : List Float
+    , basisY : List Float
+    , hideGrid : Bool
+    , scale : Float
+    , vectorAMDrop : Bool
+    , vectorOpDrop : Bool
+    , state2 : State
+    --, points : List (Float,Float)
+    , point1 : (Float, Float)
+    , point2 : (Float, Float)
+    , point3 : (Float, Float)
+    , ogVector : Bool
+    , sVal1 : Bool
+    , secVector : Bool
+    , sVal2 : Bool
+    , thirdVector : Bool
+    , sVal3 : Bool
+    , resVector : Bool
+    , multVector : Bool
+    , addVector : Bool
+    , index : Int
+    --, startPoints : List (Float,Float)
+    , startPoint1 : (Float, Float)
+    , startPoint2 : (Float, Float)
+    , startPoint3 : (Float, Float)
+    , scalar1 : Float
+    , scalar2 : Float
+    , scalar3 : Float
+    , hShear : Bool
+    , hShearFactor : Float
+    , vShear : Bool
+    , vShearFactor : Float
+    , determinant : Bool
+    , eigenvalue : Bool
+    , rotateVector : Bool
+    , xReflection : Bool
+    , yReflection : Bool
+    , settingsDrop1 : Bool
+    , settingsDrop2 : Bool
+    , settingsDrop3 : Bool
+    , v1Color : Color
+    , v2Color : Color
+    , v3Color : Color
+    , startTime : Float
+    , errorText : String
+    , rotation : Int
+    , rotateVectorDrop : Bool
+    , hideAxis : Bool
+    , backGroundColor : Int
+    , startDrop : Bool
+    , instructionsModel : Huanh41.Inst.Model
+    , cheatsheetModel : Sunw53.Cheatsheet.Model
+    }
+
+type alias Point = (Float, Float)
+
+init : Model
+init = { time = 0 
+       , state = Start 
+       , basisX = [10, 0]
+       , basisY = [0, 10]
+       , hideGrid = False
+       , scale = 2
+       , vectorAMDrop = False
+       , vectorOpDrop = False
+       , state2 = Waiting
+       --, points = []
+       , ogVector = False
+       , sVal1 = False
+       , point1 = (10,10)
+       , point2 = (-10,10)
+       , point3 = (-10,-10)
+       , secVector = False
+       , sVal2 = False
+       , thirdVector = False
+       , sVal3 = False
+       , resVector = False
+       , multVector = False
+       , addVector = False    
+       , index = 0
+       --, startPoints = [(0,0),(0,0)]
+       , startPoint1 = (0,0)
+       , startPoint2 = (0,0)
+       , startPoint3 = (0,0)
+       , scalar1 = 1
+       , scalar2 = 1
+       , scalar3 = 1
+       , hShear = False
+       , hShearFactor = 1
+       , vShear = False
+       , vShearFactor = 1
+       , determinant  = False
+       , eigenvalue  = False
+       , rotateVector  = False
+       , xReflection  = False
+       , yReflection  = False
+       , settingsDrop1 = False
+       , settingsDrop2 = False
+       , settingsDrop3 = False
+       , v1Color = blue
+       , v2Color = blue
+       , v3Color = blue
+       , startTime = 0
+       , errorText = ""
+       , rotation = 45
+       , rotateVectorDrop = False
+       , hideAxis = False
+       , backGroundColor = 0
+       , startDrop = False
+       , instructionsModel = Huanh41.Inst.init
+       , cheatsheetModel = Sunw53.Cheatsheet.init
+       }
+    
+    
+main = gameApp Tick { model = init, view = view, update = update, title = "Game Slot" }
+
+view model = collage 192 128 (myShapes model)
+
+-- responsible for drawing the setting icon
+gear = group [ circle 2 |> filled grey
+                                 , circle 1 |> filled white
+                                 , square 1
+                                 |> filled grey
+                                 |> move (0, 2)
+                                 , square 1
+                                 |> filled grey
+                                 |> move (0, 2)
+                                 |> rotate (degrees 45)
+                                 , square 1
+                                 |> filled grey
+                                 |> move (0, 2)
+                                 |> rotate (degrees 90)
+                                 , square 1
+                                 |> filled grey
+                                 |> move (0, 2)
+                                 |> rotate (degrees 135)
+                                 , square 1
+                                 |> filled grey
+                                 |> move (0, 2)
+                                 |> rotate (degrees 180)
+                                 , square 1
+                                 |> filled grey
+                                 |> move (0, 2)
+                                 |> rotate (degrees 225)
+                                 , square 1
+                                 |> filled grey
+                                 |> move (0, 2)
+                                 |> rotate (degrees 270)
+                                 , square 1
+                                 |> filled grey
+                                 |> move (0, 2)
+                                 |> rotate (degrees 315)
+                       ]
